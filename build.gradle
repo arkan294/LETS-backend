@@ -1,0 +1,51 @@
+plugins {
+	id 'org.springframework.boot' version '2.6.7'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+	id 'scala'
+}
+
+group = 'org.lets'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.ergoplatform:ergo-appkit_2.12:4.0.8'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+sourceSets {
+	main {
+		java {
+			srcDirs = []
+		}
+		scala {
+			srcDirs = ['src/main/scala', 'src/main/java']
+		}
+	}
+	test {
+		java {
+			srcDirs = []
+		}
+		scala {
+			srcDirs = ['src/test/scala', 'src/test/java']
+		}
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
