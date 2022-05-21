@@ -1,0 +1,27 @@
+//Box used as input for minting lets tokens. Is created as user together with the management box config box that contains initial values of its registers
+//
+//Hard-coded variables:
+//val votingTokenMintingBoxScriptHash: Coll[Byte]
+//
+//Registers
+//R4[Coll[[Coll[Byte]]] - proposition bytes of initial users' PKs
+//R5[Coll[Byte]] - management box config tx id
+//
+//Transaction
+//INPUTS(0) - self
+//OUTPUTS(0) - voting token minting box
+{
+    val votingTokenMintingBox: Box = OUTPUTS(0)
+    val correctScript: Boolean = blake2b256(votingTokenMintingBox.propositionBytes) == votingTokenMintingBoxScriptHash
+    val managementBoxNftPreserved: Boolean = SELF.tokens(0)._1 == votingTokenMintingBox.tokens(0)._1 && SELF.tokens(0)._2 == 1
+    val letsTokensMinted: Boolean = votingTokenMintingBox.tokens(1)._1 == SELF.id
+    val initialUsersInfoPreserved: Boolean = SELF.R4[Coll[Coll[Byte]]].get == votingTokenMintingBox.R7[Coll[Coll[Byte]]].get
+    val managementConfigBoxInfoPreserved: Boolean = SELF.creationInfo._2 == votingTokenMintingBox.R8[Coll[Byte]].get
+    sigmaProp(allOf(Coll(
+        correctScript,
+        managementBoxNftPreserved,
+        letsTokensMinted,
+        initialUsersInfoPreserved,
+        managementConfigBoxInfoPreserved
+    )))
+}

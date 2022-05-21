@@ -1,0 +1,174 @@
+{
+//Hard-coded variables:
+//letsBoxPropositionBytesHash - blake2b256 hash of lets box propositionBytes
+//votingBoxPropositionBytesHash - blake2b256 hash of voting box propositionBytes
+//
+//Registers:
+//R4[Coll[Coll[Byte]]] - collection of hashes of propositionBytes of command boxes allowing to change management box's registers (0) - R4, (1) -R5, (2) - R6 (3) - R7
+//R5[(Long, Long)]  - min and max LETS values
+//R6[(Coll[Byte],(Coll[Byte], Long))] - Lets name and "token" details (name and decimals)
+//R7[Int] - number of members needed to add a new member
+//
+//Tokens:
+//tokens(0)management box nft
+//tokens(1) LETS tokens
+//tokens(2) voting tokens
+//Each LETS box and voting box will have 1 of the corresponding token
+//
+//Transactions:
+//
+//Adding new user
+//INPUTS(0) - management box
+//INPUTS(1 - n) - voting boxes
+//OUTPUTS(0) - management box
+//OUTPUTS(1) - new user LETS box
+//OUTPUTS(2) - new user voting box
+//OUTPUTS(3 - n+2) - voting boxes
+//
+//Changing parameters
+//INPUTS(0) - management box
+//INPUTS(1) - command box(with tx fee)
+//OUTPUTS(0) - management box
+//OUTPUTS(1) - fee
+
+val correctLetsBox: Boolean = {(box: Box)=>
+    allOf(Coll(
+            box.tokens.size == 1,
+            box.tokens(0)._1 == SELF.tokens(1)._1,
+            box.tokens(0)._2 == 1L,
+            blake2b256(box.propositionBytes) == letsBoxPropositionBytesHash,
+            box.R5[Long].get == 0//start value is zero
+            ))
+}
+
+val correctVotingBox: Boolean = {(box: Box)=>
+    allOf(Coll(
+            box.tokens.size == 1,
+            box.tokens(0)._1 == SELF.tokens(2)._1,
+            box.tokens(0)._2 == 1L,
+            blake2b256(box.propositionBytes) == votingBoxPropositionBytesHash,
+            !(box.R5[Coll[Coll[Byte]]].isDefined)//box created without votes
+            ))
+}
+
+
+
+val votesCastCount: Int = {(newUserPropBytes: Coll[Byte])=>
+        val votesCount: Int = INPUTS.fold(0, {(acc: Int, input: Box) =>
+               if (input.tokens.size == 1 && input.tokens(0)._1 == SELF.tokens(2)._1){
+                    val voted: Boolean = input.R5[Coll[Coll[Byte]]].get.exists{
+                        (vote: Coll[Byte]) =>
+                        {
+                            vote == newUserPropBytes
+                        }
+                    }
+                    if (voted)
+                        acc + 1
+                    else
+                        acc
+               }
+               else acc
+        })
+        votesCount
+}
+
+
+val newManagementBox: Box = OUTPUTS(0)
+val sameScript: Boolean = SELF.propositionBytes == newManagementBox.propositionBytes
+val sameR4: Boolean = SELF.R4[Coll[Coll[Byte]]].get == newManagementBox.R4[Coll[Coll[Byte]]].get
+val sameR5: Boolean = SELF.R5[(Long, Long)].get == newManagementBox.R5[(Long, Long)].get
+val sameR6: Boolean = SELF.R6[(Coll[Byte], Long)].get == newManagementBox.R6[(Coll[Byte], Long)].get
+val sameR7: Boolean = SELF.R7[Int].get == newManagementBox.R7[Int].get
+
+val changingParameters: Boolean = OUTPUTS.size == 2
+
+if(changingParameters)
+{
+    val commandBox: Box = INPUTS(1)
+    val registerToChange: Int = commandBox.R4[Int].get
+    val sameTokens: Boolean = SELF.tokens == newManagementBox.tokens
+
+    if (registerToChange == 4){
+        val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R4[Coll[Coll[Byte]]].get(0)
+        val r4Changed: Boolean = newManagementBox.R4[Coll[Coll[Byte]]].get == commandBox.R5[Coll[Coll[Byte]]].get
+        val sameR4Size: Boolean = SELF.R4[Coll[Coll[Byte]]].get.size == newManagementBox.R4[Coll[Coll[Byte]]].get.size
+        sigmaProp(allOf(Coll(
+            sameScript,
+            sameTokens,
+            correctCommandBoxScript,
+            r4Changed,
+            sameR4Size,
+            sameR5,
+            sameR6,
+            sameR7
+        )))
+    }
+    else if (registerToChange == 5){
+        val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R4[Coll[Coll[Byte]]].get(1)
+        val r5Changed: Boolean = newManagementBox.R5[(Long, Long)].get == commandBox.R5[(Long, Long)].get
+        sigmaProp(allOf(Coll(
+            sameScript,
+            sameTokens,
+            correctCommandBoxScript,
+            r5Changed,
+            sameR4,
+            sameR6,
+            sameR7
+        )))
+    }
+    else if (registerToChange == 6){
+        val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R4[Coll[Coll[Byte]]].get(2)
+        val r6Changed: Boolean = newManagementBox.R6[(Coll[Byte], Long)].get == commandBox.R5[(Coll[Byte], Long)].get
+        sigmaProp(allOf(Coll(
+            sameScript,
+            sameTokens,
+            correctCommandBoxScript,
+            r6Changed,
+            sameR4,
+            sameR5,
+            sameR7
+        )))
+    }
+    else if (registerToChange == 7){
+        val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R4[Coll[Coll[Byte]]].get(3)
+        val r7Changed: Boolean = newManagementBox.R7[Int].get == commandBox.R5[Int].get
+        sigmaProp(allOf(Coll(
+            sameScript,
+            sameTokens,
+            correctCommandBoxScript,
+            r7Changed,
+            sameR4,
+            sameR5,
+            sameR6
+        )))
+    }
+    else sigmaProp(false)
+}
+else//adding a new user
+{
+    val newLetsBox: Box = OUTPUTS(1)
+    val newVotingBox: Box = OUTPUTS(2)
+    val newUserPropBytes: Coll[Byte] = newLetsBox.R4[SigmaProp].get.propBytes
+    val sameUser: Boolean = newLetsBox.R4[SigmaProp].get == newVotingBox.R4[SigmaProp].get
+
+    val letsTokensAfterAddingUsers: Long = SELF.tokens(1)._2 - 1L
+    val votingTokensAfterAddingUsers: Long = SELF.tokens(2)._2 - 1L
+
+    sigmaProp(allOf(Coll(
+        sameUser,
+        correctLetsBox(newLetsBox),
+        correctVotingBox(newVotingBox),
+        votesCastCount(newUserPropBytes) >= SELF.R7[Int].get,
+        sameR4,
+        sameR5,
+        sameR6,
+        sameR7,
+        sameScript,
+        SELF.tokens(0) == newManagementBox.tokens(0),
+        SELF.tokens(1)._1 == newManagementBox.tokens(1)._1,
+        newManagementBox.tokens(1)._2 == letsTokensAfterAddingUsers,
+        SELF.tokens(2)._1 == newManagementBox.tokens(2)._1,
+        newManagementBox.tokens(2)._2 == votingTokensAfterAddingUsers
+    )))
+}
+}
