@@ -27,19 +27,20 @@
     val usersPkBytes: Coll[Coll[Byte]] = SELF.R7[Coll[Coll[Byte]]].get
     val allBoxesCreated: Boolean = OUTPUTS.size - 2 == usersPkBytes.size
     val newLetsBoxes: Coll[Box] = OUTPUTS.slice(1, OUTPUTS.size - 1)
-    val boxesWithPkBytesPairs: Coll[(Box, Coll[Byte])] = newLetsBoxes.zip(usersPkBytes)
+    val pkBytesPairsWithBoxes: Coll[(Box, Coll[Byte])] = usersPkBytes.zip(newLetsBoxes)
     val correctLetsBoxes: Boolean = boxesWithPkBytesPairs.forall{
-        (boxPkBytesPair: (Box, Coll[Byte]))=>
-        val box: Box = boxPkBytesPair._1
-        val pkBytes: Coll[Byte] = boxPkBytesPair._2
+        (boxPkBytesPair: (Coll[Byte], Box))=>{
+        val pkBytes: Coll[Byte] = boxPkBytesPair._1
+        val box: Box = boxPkBytesPair._2
         allOf(Coll(
                 box.tokens.size == 1,
                 box.tokens(0)._1 == SELF.tokens(1)._1,
                 box.tokens(0)._2 == 1L,
                 blake2b256(box.propositionBytes) == letsBoxScriptHash,
                 box.R4[SigmaProp].get.propBytes == pkBytes,
-                box.R5[Long].get == 0//start value is zero
+                box.R5[Long].get == 0L//start value is zero
                 ))
+                }
     }
     val correctScript: Boolean = blake2b256(managementAndVotingBoxesCreatingBox.propositionBytes) == managementAndVotingBoxesCreatingBoxScriptHash
     val sameR7: Boolean = managementAndVotingBoxesCreatingBox.R7[Coll[Coll[Byte]]].get == SELF.R7[Coll[Coll[Byte]]].get
