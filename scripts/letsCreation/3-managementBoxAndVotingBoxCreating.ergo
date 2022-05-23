@@ -12,7 +12,7 @@
 //Registers
 //R4-R6 - registers used for minting tokens
 //R7[Coll[[Coll[Byte]]] - proposition bytes of initial users' PKs
-//R8[Coll[Byte]] - management box config box tx id
+//R8[Coll[Byte]] - hash of bytes without ref of config box
 //
 //Transaction
 //INPUTS(0) - self
