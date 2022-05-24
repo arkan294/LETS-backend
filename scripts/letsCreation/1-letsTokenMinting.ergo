@@ -13,7 +13,7 @@
 //
 //Transaction
 //INPUTS(0) - self
-//OUTPUTS(0) - voting token minting box
+//OUTPUTS(0) - voting token minting and initial LETS boxes creating box
 {
     val votingTokenMintingBox: Box = OUTPUTS(0)
     val correctScript: Boolean = blake2b256(votingTokenMintingBox.propositionBytes) == votingTokenMintingBoxScriptHash

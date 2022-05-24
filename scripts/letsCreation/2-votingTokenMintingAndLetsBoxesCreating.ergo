@@ -15,7 +15,7 @@
 //
 //Transaction
 //INPUTS(0) - self
-//OUTPUTS(0) - initial voting boxes creating proxy
+//OUTPUTS(0) - initial voting boxes and management box creating box
 //OUTPUTS(1 - OUTPUTS.size-2) - initial LETS boxes
 {
     val managementAndVotingBoxesCreatingBox: Box = OUTPUTS(0)
