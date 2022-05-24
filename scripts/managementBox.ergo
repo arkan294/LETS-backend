@@ -6,7 +6,7 @@
 //Registers:
 //R4[(Long, Long)]  - min and max LETS values
 //R5[Coll[Coll[Byte]]] - collection of hashes of propositionBytes of command boxes allowing to change management box's registers (0) - R4, (1) - R5, (2) - R6 (3) - R7
-//R6[Coll[Coll[Byte]]] - LETS name and "token" details (name and decimals) - (0) - LETS name, (1) - "token" name, (2) - decimals
+//R6[Coll[Coll[Byte]]] - LETS name and "token" details (name and decimals) - (0) - LETS name, (1) - "token" name, (2)(0) - decimals
 //R7[Int] - number of members needed to add a new member
 //
 //Tokens:
@@ -52,8 +52,6 @@ val correctVotingBox: Boolean = {(box: Box)=>
             ))
 }
 
-
-
 val votesCastCount: Int = {(newUserPropBytes: Coll[Byte])=>
         val votesCount: Int = INPUTS.fold(0, {(acc: Int, input: Box) =>
                if (input.tokens.size == 1 && input.tokens(0)._1 == SELF.tokens(2)._1){
@@ -81,17 +79,17 @@ val sameR5: Boolean = SELF.R5[Coll[Coll[Byte]]].get == newManagementBox.R5[Coll[
 val sameR6: Boolean = SELF.R6[Coll[Coll[Byte]]].get == newManagementBox.R6[Coll[Coll[Byte]]].get
 val sameR7: Boolean = SELF.R7[Int].get == newManagementBox.R7[Int].get
 
-val changingParameters: Boolean = OUTPUTS.size == 2
+val changingParameters: Boolean = OUTPUTS.size < 4
 
 if(changingParameters)
 {
     val commandBox: Box = INPUTS(1)
-    val registerToChange: Int = commandBox.R4[Int].get
+    val registerToChange: Int = commandBox.R8[Int].get
     val sameTokens: Boolean = SELF.tokens == newManagementBox.tokens
 
     if (registerToChange == 4){
-        val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R5[Coll[Coll[Byte]]].get(1)
-        val r4Changed: Boolean = newManagementBox.R4[(Long, Long)].get == commandBox.R5[(Long, Long)].get
+        val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R5[Coll[Coll[Byte]]].get(0)
+        val r4Changed: Boolean = newManagementBox.R4[(Long, Long)].get == commandBox.R4[(Long, Long)].get
         sigmaProp(allOf(Coll(
             sameScript,
             sameTokens,
@@ -103,7 +101,7 @@ if(changingParameters)
         )))
     }
     else if (registerToChange == 5){
-        val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R5[Coll[Coll[Byte]]].get(0)
+        val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R5[Coll[Coll[Byte]]].get(1)
         val r5Changed: Boolean = newManagementBox.R5[Coll[Coll[Byte]]].get == commandBox.R5[Coll[Coll[Byte]]].get
         val sameR5Size: Boolean = SELF.R5[Coll[Coll[Byte]]].get.size == newManagementBox.R5[Coll[Coll[Byte]]].get.size
         sigmaProp(allOf(Coll(
@@ -119,7 +117,7 @@ if(changingParameters)
     }
     else if (registerToChange == 6){
         val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R5[Coll[Coll[Byte]]].get(2)
-        val r6Changed: Boolean = newManagementBox.R6[Coll[Coll[Byte]]].get == commandBox.R5[Coll[Coll[Byte]]].get
+        val r6Changed: Boolean = newManagementBox.R6[Coll[Coll[Byte]]].get == commandBox.R6[Coll[Coll[Byte]]].get
         sigmaProp(allOf(Coll(
             sameScript,
             sameTokens,
@@ -132,7 +130,7 @@ if(changingParameters)
     }
     else if (registerToChange == 7){
         val correctCommandBoxScript: Boolean = blake2b256(commandBox.propositionBytes) == SELF.R5[Coll[Coll[Byte]]].get(3)
-        val r7Changed: Boolean = newManagementBox.R7[Int].get == commandBox.R5[Int].get
+        val r7Changed: Boolean = newManagementBox.R7[Int].get == commandBox.R7[Int].get
         sigmaProp(allOf(Coll(
             sameScript,
             sameTokens,
