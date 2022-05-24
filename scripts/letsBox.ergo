@@ -1,0 +1,107 @@
+{
+    //Hard-coded constants
+    //val managementBoxNftId: Coll[Byte]
+    //
+    //Registers
+    //R4[SigmaProp] - PK of the owner
+    //R5[Long] - LETS value
+    //R6[Coll[Byte]] - description of the owner
+    //
+    //Management box
+    //R4[(Long, Long)] - minimum and maximum LETS values
+    //
+    //Transactions
+    //INPUTS(0) - sender LETS box
+    //INPUTS(1 - n) - receiver LETS boxes
+    //INPUTS(n+1) - value for tx fee from sender
+    //dataInputs(0) - management box
+    //OUTPUTS(0) - sender LETS box
+    //OUTPUTS(1 - n) - receiver LETS boxes
+    //INPUTS(n+1) - change for the sender
+
+
+    val isLetsBox: Boolean = {(box: Box) =>
+        if (box.tokens.size > 0){
+            box.tokens(0)._1 == SELF.tokens(0)._1 //box has LETS token
+        }
+        else false
+    }
+    val boxHasSameOwner: Boolean = {(box: Box) =>
+        box.R4[SigmaProp].get == SELF.R4[SigmaProp].get
+    }
+    val boxHasSameDescription: Boolean = {(box: Box) =>
+        box.R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get
+    }
+    val sumOfValues: Long = {(boxes: Coll[Box]) =>
+        boxes.fold(0L, {
+        (acc: Long, box: Box) =>{
+            if (isLetsBox(box)) {
+                acc + box.R5[Long].get
+            } else{
+            acc
+        }
+        }})
+    }
+
+    val managementBox: Box = CONTEXT.dataInputs(0)
+    val managementBoxCorrect: Boolean = managementBox.tokens(0)._1 == managementBoxNftId
+
+    val outValueBiggerThanMinLimit: Boolean = {(box: Box)=>
+        val minValue: Long = managementBox.R4[(Long, Long)].get._1
+        if (minValue >= 0L)//no min limit
+            true
+        else
+            box.R5[Long].get >= minValue
+    }
+
+    val outValueSmallerThanMaxLimit: Boolean = {(box: Box)=>
+        val maxValue: Long = managementBox.R4[(Long, Long)].get._2
+        if (maxValue <= 0L)//no max limit
+            true
+        else
+            box.R5[Long].get <= maxValue
+    }
+
+
+    if(SELF == INPUTS(0)){//sending value
+        val newLetsBox: Box = OUTPUTS(0)
+        val boxPersists: Boolean = allOf(Coll(
+            isLetsBox(newLetsBox),
+            boxHasSameOwner(newLetsBox),
+            outValueBiggerThanMinLimit(newLetsBox),
+            SELF.propositionBytes == newLetsBox.propositionBytes
+        ))
+        val sumsOfValuesMatch: Boolean = sumOfValues(INPUTS) == sumOfValues(OUTPUTS)
+
+        val receiverInputs: Coll[Box] = INPUTS.slice(1, INPUTS.size)
+        val receiverOutputs: Coll[Box] = OUTPUTS.slice(1, INPUTS.size)
+
+        val receiverBoxesPairs: Coll[(Box, Box)] = receiverInputs.zip(receiverOutputs)
+
+        val allReceiversGainValue: Boolean = receiverBoxesPairs.forall{
+            (receiverBoxes: (Box, Box))=>{
+            val in: Box = receiverBoxes._1
+            val out: Box = receiverBoxes._2
+           if (isLetsBox(in)) {
+               allOf(Coll(
+                        isLetsBox(out),
+                        in.propositionBytes == out.propositionBytes,
+                        out.R4[SigmaProp].get == in.R4[SigmaProp].get,
+                        out.R5[Long].get > in.R5[Long].get, //value is added
+                        in.R6[Coll[Byte]].get == out.R6[Coll[Byte]].get,
+                        outValueSmallerThanMaxLimit(out)
+                        ))
+                }
+                else true
+        }}
+
+
+        sigmaProp(boxPersists && sumsOfValuesMatch && managementBoxCorrect && allReceiversGainValue) && SELF.R4[SigmaProp].get
+    }
+    else{
+        val sender: Box = INPUTS(0)
+        val senderIsInLets: Boolean = isLetsBox(sender)
+        val sameScript: Boolean = SELF.propositionBytes == sender.propositionBytes
+        sigmaProp(senderIsInLets && sameScript)
+    }
+}

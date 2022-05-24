@@ -1,0 +1,68 @@
+//Box used as input for creating the management box and initial voting boxes
+//
+//Hard-coded variables
+//val managementBoxScriptHash: Coll[Byte]
+//val votingBoxScriptHash: Coll[Byte]
+//
+//Tokens
+//tokens(0) - management box nft
+//tokens(1) - lets tokens
+//tokens(2) - voting tokens
+//
+//Registers
+//R4-R6 - registers used for minting tokens
+//R7[Coll[[Coll[Byte]]] - proposition bytes of initial users' PKs
+//R8[Coll[Byte]] - config box bytes without ref hash
+//
+//Transaction
+//INPUTS(0) - self
+//INPUTS(1) - management box config box
+//OUTPUTS(0) - management box
+//OUTPUTS(1 - OUTPUTS.size-2) - initial voting boxes
+{
+    val managementBox: Box = OUTPUTS(0)
+    val noLostTokens: Boolean = allOf(Coll(
+        managementBox.tokens(0)._1 == SELF.tokens(0)._1,
+        managementBox.tokens(1) == SELF.tokens(1),
+        managementBox.tokens(2)._1 == SELF.tokens(2)._1,
+        managementBox.tokens(2)._2 == SELF.tokens(2)._2 - (OUTPUTS.size - 2)
+    ))
+    val twoInputs: Boolean = INPUTS.size == 2
+    val usersPkBytes: Coll[Coll[Byte]] = SELF.R7[Coll[Coll[Byte]]].get
+    val allBoxesCreated: Boolean = OUTPUTS.size - 2 == usersPkBytes.size
+    val newVotingBoxes: Coll[Box] = OUTPUTS.slice(1, OUTPUTS.size - 1)
+    val pkBytesWithBoxesPairs: Coll[(Box, Coll[Byte])] = usersPkBytes.zip(newVotingBoxes)
+    val correctVotingBoxes: Boolean = pkBytesWithBoxesPairs.forall{
+        (pkBytesBoxPair: (Coll[Byte], Box))=>
+        val pkBytes: Coll[Byte] = pkBytesBoxPair._1
+        val box: Box = pkBytesBoxPair._2
+        allOf(Coll(
+               box.tokens.size == 1,
+               box.tokens(0)._1 == SELF.tokens(2)._1,
+               box.tokens(0)._2 == 1L,
+               blake2b256(box.propositionBytes) == votingBoxScriptHash,
+               box.R4[SigmaProp].get.propBytes == pkBytes,
+               !(box.R5[Coll[Coll[Byte]]].isDefined)//box created without votes
+            ))
+    }
+    val configBox: Box = INPUTS(1)
+    val configBoxBytesWithoutRefHash: Coll[Byte] = SELF.R8[Coll[Byte]].get
+    val correctConfigBox: Boolean = configBoxBytesWithoutRefHash == blake2b256(configBox.bytesWithoutRef)
+
+    val correctManagementBox: Boolean = allOf(Coll(
+        blake2b256(managementBox.propositionBytes) == managementBoxScriptHash,
+        managementBox.R4[(Long, Long)].get == configBox.R4[(Long, Long)].get,
+        managementBox.R5[Coll[Coll[Byte]]].get == configBox.R5[Coll[Coll[Byte]]].get,
+        managementBox.R6[Coll[Coll[Byte]]].get == configBox.R6[Coll[Coll[Byte]]].get,
+        managementBox.R7[Int].get == configBox.R7[Int].get
+    ))
+    sigmaProp(allOf(Coll(
+        noLostTokens,
+        twoInputs,
+        correctVotingBoxes,
+        correctManagementBox,
+        correctConfigBox
+    ))
+    )
+
+}
