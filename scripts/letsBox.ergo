@@ -8,7 +8,7 @@
     //R6[Coll[Byte]] - description of the owner
     //
     //Management box
-    //R5[(Long, Long)] - minimum and maximum LETS values
+    //R4[(Long, Long)] - minimum and maximum LETS values
     //
     //Transactions
     //INPUTS(0) - sender LETS box
@@ -47,7 +47,7 @@
     val managementBoxCorrect: Boolean = managementBox.tokens(0)._1 == managementBoxNftId
 
     val outValueBiggerThanMinLimit: Boolean = {(box: Box)=>
-        val minValue: Long = managementBox.R5[(Long, Long)].get._1
+        val minValue: Long = managementBox.R4[(Long, Long)].get._1
         if (minValue >= 0L)//no min limit
             true
         else
@@ -55,7 +55,7 @@
     }
 
     val outValueSmallerThanMaxLimit: Boolean = {(box: Box)=>
-        val maxValue: Long = managementBox.R5[(Long, Long)].get._2
+        val maxValue: Long = managementBox.R4[(Long, Long)].get._2
         if (maxValue <= 0L)//no max limit
             true
         else
