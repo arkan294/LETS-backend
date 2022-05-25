@@ -22,7 +22,7 @@
 {
     val managementBox: Box = OUTPUTS(0)
     val noLostTokens: Boolean = allOf(Coll(
-        managementBox.tokens(0)._1 == SELF.tokens(0)._1,
+        managementBox.tokens(0) == SELF.tokens(0),
         managementBox.tokens(1) == SELF.tokens(1),
         managementBox.tokens(2)._1 == SELF.tokens(2)._1,
         managementBox.tokens(2)._2 == SELF.tokens(2)._2 - (OUTPUTS.size - 2)
@@ -59,6 +59,7 @@
     sigmaProp(allOf(Coll(
         noLostTokens,
         twoInputs,
+        allBoxesCreated,
         correctVotingBoxes,
         correctManagementBox,
         correctConfigBox

@@ -20,7 +20,8 @@
 {
     val managementAndVotingBoxesCreatingBox: Box = OUTPUTS(0)
     val noLostTokens: Boolean = allOf(Coll(
-     managementAndVotingBoxesCreatingBox.tokens(0)._1 == SELF.tokens(0)._1,
+     managementAndVotingBoxesCreatingBox.tokens(0) == SELF.tokens(0),
+     managementAndVotingBoxesCreatingBox.tokens(1)._1 == SELF.tokens(1)._1,
      managementAndVotingBoxesCreatingBox.tokens(1)._2 == SELF.tokens(1)._2 - (OUTPUTS.size - 2)
     ))
     val oneInput: Boolean = INPUTS.size == 1
@@ -45,11 +46,15 @@
     val correctScript: Boolean = blake2b256(managementAndVotingBoxesCreatingBox.propositionBytes) == managementAndVotingBoxesCreatingBoxScriptHash
     val sameR7: Boolean = managementAndVotingBoxesCreatingBox.R7[Coll[Coll[Byte]]].get == SELF.R7[Coll[Coll[Byte]]].get
     val votingTokensMinted: Boolean = managementAndVotingBoxesCreatingBox.tokens(2)._1 == SELF.id
-    val managementConfigBoxInfoPreserved: Boolean = SELF.R5[Coll[Byte]].get == managementAndVotingBoxesCreatingBox.R8[Coll[Byte]].get
+    val votingTokensAmountCorrect: Boolean = managementAndVotingBoxesCreatingBox.tokens(2)._2 == 10000000000L
+    val managementConfigBoxInfoPreserved: Boolean = SELF.R8[Coll[Byte]].get == managementAndVotingBoxesCreatingBox.R8[Coll[Byte]].get
     sigmaProp(allOf(Coll(
         noLostTokens,
         allBoxesCreated,
         oneInput,
+        votingTokensMinted,
+        votingTokensAmountCorrect,
+        managementConfigBoxInfoPreserved,
         correctLetsBoxes,
         correctScript,
         sameR7
