@@ -47,7 +47,6 @@
        val usersVotedFor: Coll[Coll[Byte]] = SELF.R5[Coll[Coll[Byte]]].get
        val votesAfterAddingUser: Coll[Coll[Byte]] = usersVotedFor.filter{(user: Coll[Byte]) => {user != newUserPkBytes}}
        val userBeingAddedInVotes: Boolean = votesAfterAddingUser.size == usersVotedFor.size - 1
-       val votingBoxOutputs: Coll[Box] = OUTPUTS.slice(3, OUTPUTS.size - 1)
        val voteBoxOutputExists: Boolean =
           {
           val selfIndex: Int = INPUTS.indexOf(SELF, 1)
