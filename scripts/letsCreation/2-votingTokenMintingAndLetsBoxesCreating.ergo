@@ -28,8 +28,8 @@
     val usersPkBytes: Coll[Coll[Byte]] = SELF.R7[Coll[Coll[Byte]]].get
     val allBoxesCreated: Boolean = OUTPUTS.size - 2 == usersPkBytes.size
     val newLetsBoxes: Coll[Box] = OUTPUTS.slice(1, OUTPUTS.size - 1)
-    val pkBytesPairsWithBoxes: Coll[(Box, Coll[Byte])] = usersPkBytes.zip(newLetsBoxes)
-    val correctLetsBoxes: Boolean = boxesWithPkBytesPairs.forall{
+    val pkBytesPairsWithBoxes: Coll[(Coll[Byte], Box)] = usersPkBytes.zip(newLetsBoxes)
+    val correctLetsBoxes: Boolean = pkBytesPairsWithBoxes.forall{
         (boxPkBytesPair: (Coll[Byte], Box))=>{
         val pkBytes: Coll[Byte] = boxPkBytesPair._1
         val box: Box = boxPkBytesPair._2

@@ -29,9 +29,6 @@
     val boxHasSameOwner: Boolean = {(box: Box) =>
         box.R4[SigmaProp].get == SELF.R4[SigmaProp].get
     }
-    val boxHasSameDescription: Boolean = {(box: Box) =>
-        box.R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get
-    }
     val sumOfValues: Long = {(boxes: Coll[Box]) =>
         boxes.fold(0L, {
         (acc: Long, box: Box) =>{
@@ -62,7 +59,6 @@
             box.R5[Long].get <= maxValue
     }
 
-
     if(SELF == INPUTS(0)){//sending value
         val newLetsBox: Box = OUTPUTS(0)
         val boxPersists: Boolean = allOf(Coll(
@@ -82,7 +78,7 @@
             (receiverBoxes: (Box, Box))=>{
             val in: Box = receiverBoxes._1
             val out: Box = receiverBoxes._2
-           if (isLetsBox(in)) {
+            if (isLetsBox(in)) {
                allOf(Coll(
                         isLetsBox(out),
                         in.propositionBytes == out.propositionBytes,
@@ -94,7 +90,6 @@
                 }
                 else true
         }}
-
 
         sigmaProp(boxPersists && sumsOfValuesMatch && managementBoxCorrect && allReceiversGainValue) && SELF.R4[SigmaProp].get
     }
