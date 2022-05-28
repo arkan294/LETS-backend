@@ -21,7 +21,7 @@
     val letsTokensMinted: Boolean = votingTokenMintingBox.tokens(1)._1 == SELF.id
     val letsTokensAmountCorrect: Boolean = votingTokenMintingBox.tokens(1)._2 == 10000000000L
     val initialUsersInfoPreserved: Boolean = SELF.R7[Coll[Coll[Byte]]].get == votingTokenMintingBox.R7[Coll[Coll[Byte]]].get
-    val managementConfigBoxInfoPreserved: Boolean = SELF.R8[Coll[Byte]] == votingTokenMintingBox.R8[Coll[Byte]].get
+    val managementConfigBoxInfoPreserved: Boolean = SELF.R8[Coll[Byte]].get == votingTokenMintingBox.R8[Coll[Byte]].get
     sigmaProp(allOf(Coll(
         correctScript,
         managementBoxNftPreserved,
